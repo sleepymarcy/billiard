@@ -1,0 +1,24 @@
+[package]
+name = "wtf"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy = { version = "0.17", default-features = false, features = [
+    "bevy_sprite_render",
+    "bevy_core_pipeline",
+    # "multi_threaded",
+    "bevy_winit",
+    "dynamic_linking",
+] }
+avian2d = { version = "0.4", default-features = false, features = [
+    "2d",
+    "parry-f32",
+] }
+bevy_enhanced_input = "0.20"
+
+[profile.dev]
+opt-level = 0
+
+[profile.dev.package."*"]
+opt-level = 3
