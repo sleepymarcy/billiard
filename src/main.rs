@@ -13,8 +13,16 @@ fn main() {
             DefaultPlugins,
             PhysicsPlugins::default().with_length_unit(0.01),
         ))
-        .add_systems(Startup, (spawn_camera, spawn_circle, walls::spawn))
-        // .insert_resource(Gravity(Vec3::ZERO))
+        .add_systems(
+            Startup,
+            (
+                spawn_camera,
+                spawn_light,
+                spawn_circle,
+                // spawn_markers,
+                walls::spawn,
+            ),
+        )
         .insert_resource(SolverConfig {
             restitution_threshold: 0.1,
             ..default()
@@ -22,20 +30,60 @@ fn main() {
         .run();
 }
 
+fn spawn_markers(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let mesh = meshes.add(Cuboid::from_length(0.5));
+
+    let north = materials.add(Color::srgb(0.298, 0.757, 0.827));
+    let south = materials.add(Color::srgb(0.749, 0.725, 0.055));
+    let east = materials.add(Color::srgb(0.682, 0.039, 0.039));
+    let west = materials.add(Color::srgb(0.11, 0.502, 0.02));
+
+    commands.spawn((
+        Mesh3d(mesh.clone()),
+        MeshMaterial3d(north),
+        Transform::from_xyz(0.0, 0.0, -0.5),
+    ));
+    commands.spawn((
+        Mesh3d(mesh.clone()),
+        MeshMaterial3d(south),
+        Transform::from_xyz(0.0, 0.0, 0.5),
+    ));
+    commands.spawn((
+        Mesh3d(mesh.clone()),
+        MeshMaterial3d(east),
+        Transform::from_xyz(0.5, 0.0, 0.0),
+    ));
+    commands.spawn((
+        Mesh3d(mesh.clone()),
+        MeshMaterial3d(west),
+        Transform::from_xyz(-0.5, 0.0, 0.0),
+    ));
+}
+
 fn spawn_camera(mut commands: Commands) {
-    let transform = Transform::from_xyz(0.0, 0.0, 3.0).looking_at(Vec3::ZERO, Vec3::Y);
+    let transform = Transform::from_xyz(0.0, 3.0, 0.0).looking_at(Vec3::ZERO, -Vec3::Z);
     commands.spawn((Camera3d::default(), transform));
+}
+
+fn spawn_light(mut commands: Commands) {
+    let transform = Transform::from_xyz(-1.5, 1.0, -0.5);
     commands.spawn((PointLight::default(), transform));
 }
 
 fn spawn_circle(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
-    // mut color_materials: ResMut<Assets<ColorMaterial>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    // let mesh_handle = meshes.add(Circle { radius: 20.0 });
-    // let white_material_handle = color_materials.add(Color::WHITE);
+    let mesh_handle = meshes.add(Sphere {
+        radius: config::BALL_RADIUS,
+    });
+
+    let material_handle = materials.add(Color::WHITE);
 
     commands.spawn((
         Transform {
@@ -46,12 +94,8 @@ fn spawn_circle(
             },
             ..Default::default()
         },
-        // Mesh2d(mesh_handle),
-        // MeshMaterial2d(white_material_handle),
-        Mesh3d(meshes.add(Sphere {
-            radius: config::BALL_RADIUS,
-        })),
-        MeshMaterial3d(materials.add(Color::WHITE)),
+        Mesh3d(mesh_handle),
+        MeshMaterial3d(material_handle),
         WhiteThing,
         RigidBody::Dynamic,
         LinearVelocity(Vec3 {

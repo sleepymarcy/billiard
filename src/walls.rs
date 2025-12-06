@@ -1,22 +1,18 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
 
-use crate::config::{TABLE_HEIGHT, TABLE_WIDTH, WALL_COLOR, WALL_THICKNESS};
+use crate::config;
 
 pub fn spawn(
     mut commands: Commands,
     meshes: ResMut<Assets<Mesh>>,
-    // color_materials: ResMut<Assets<ColorMaterial>>,
     materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    // const WINDOW_WIDTH: f32 = 1280.0;
-    // const WINDOW_HEIGHT: f32 = 720.0;
-
-    let mut factory = WallBundleFactory::new(
-        TABLE_WIDTH,
-        TABLE_HEIGHT,
-        WALL_THICKNESS,
-        WALL_COLOR,
+    let mut factory = WallFactory::new(
+        config::TABLE_WIDTH,
+        config::TABLE_LENGHT,
+        config::WALL_THICKNESS,
+        config::WALL_COLOR,
         meshes,
         materials,
     );
@@ -24,30 +20,32 @@ pub fn spawn(
     // WallBundleFactory::get(&mut factory, WallId::Left);
     // factory.get(WallId::Left);
 
-    commands.spawn(factory.get(WallId::Right));
-    commands.spawn(factory.get(WallId::Left));
-    commands.spawn(factory.get(WallId::Upper));
-    commands.spawn(factory.get(WallId::Lower));
+    commands.spawn(factory.get(WallId::East));
+    commands.spawn(factory.get(WallId::West));
+    commands.spawn(factory.get(WallId::North));
+    commands.spawn(factory.get(WallId::South));
+    commands.spawn(factory.get(WallId::Floor));
 }
 
 enum WallId {
-    Upper,
-    Lower,
-    Left,
-    Right,
+    North,
+    South,
+    West,
+    East,
+    Floor,
 }
 
-struct WallBundleFactory {
-    window_width: f32,
-    window_height: f32,
+struct WallFactory {
+    table_width: f32,
+    table_lenght: f32,
     thickness: f32,
     mesh_handle: Handle<Mesh>,
     material_handle: Handle<StandardMaterial>,
 }
-impl WallBundleFactory {
+impl WallFactory {
     fn new(
-        window_width: f32,
-        window_height: f32,
+        table_width: f32,
+        table_lenght: f32,
         thickness: f32,
         color: Color,
         mut meshes: ResMut<Assets<Mesh>>,
@@ -60,8 +58,8 @@ impl WallBundleFactory {
         let material_handle = materials.add(color);
 
         Self {
-            window_width,
-            window_height,
+            table_width,
+            table_lenght,
             thickness,
             mesh_handle,
             material_handle,
@@ -69,25 +67,31 @@ impl WallBundleFactory {
     }
 
     fn get(&mut self, wall_id: WallId) -> impl Bundle {
-        let collider = match wall_id {
-            WallId::Upper | WallId::Lower => Collider::cuboid(self.window_width, self.thickness, self.thickness),
-            WallId::Left | WallId::Right => Collider::cuboid(self.thickness, self.window_height, self.thickness),
+        let transform = match wall_id {
+            WallId::North => Transform::from_xyz(0.0, 0.0, -self.table_lenght / 2.0),
+            WallId::South => Transform::from_xyz(0.0, 0.0, self.table_lenght / 2.0),
+            WallId::East => Transform::from_xyz(self.table_width / 2.0, 0.0, 0.0),
+            WallId::West => Transform::from_xyz(-self.table_width / 2.0, 0.0, 0.0),
+            WallId::Floor => Transform::from_xyz(0.0, -self.thickness, 0.0),
         };
 
-        let transform = match wall_id {
-            WallId::Upper => Transform::from_xyz(0.0, self.window_height / 2.0, 0.0),
-            WallId::Lower => Transform::from_xyz(0.0, -self.window_height / 2.0, 0.0),
-            WallId::Left => Transform::from_xyz(-self.window_width / 2.0, 0.0, 0.0),
-            WallId::Right => Transform::from_xyz(self.window_width / 2.0, 0.0, 0.0),
-        };
-
-        let transform = match wall_id {
-            WallId::Upper | WallId::Lower => {
-                transform.with_scale(Vec3::new(self.window_width / self.thickness, 1.0, 1.0))
-            }
-            WallId::Left | WallId::Right => {
-                transform.with_scale(Vec3::new(1.0, self.window_height / self.thickness, 1.0))
-            }
+        let (collider, transform) = match wall_id {
+            WallId::North | WallId::South => (
+                Collider::cuboid(self.table_width, self.thickness, self.thickness),
+                transform.with_scale(Vec3::new(self.table_width / self.thickness, 1.0, 1.0)),
+            ),
+            WallId::East | WallId::West => (
+                Collider::cuboid(self.thickness, self.table_lenght, self.thickness),
+                transform.with_scale(Vec3::new(1.0, 1.0, self.table_lenght / self.thickness)),
+            ),
+            WallId::Floor => (
+                Collider::cuboid(self.table_width, self.thickness, self.table_lenght),
+                transform.with_scale(Vec3::new(
+                    self.table_width / self.thickness,
+                    1.0,
+                    self.table_lenght / self.thickness,
+                )),
+            ),
         };
 
         let mesh = Mesh3d(self.mesh_handle.clone());
