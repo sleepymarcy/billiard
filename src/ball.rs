@@ -57,5 +57,7 @@ pub fn spawn(
             static_coefficient: 1.0,
             combine_rule: CoefficientCombine::Max,
         },
+        LinearDamping(0.55),
+        AngularDamping(0.5),
     ));
 }
