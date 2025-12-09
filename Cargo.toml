@@ -5,9 +5,8 @@ edition = "2024"
 
 [dependencies]
 bevy = { version = "0.17", features = ["dynamic_linking"] }
-# avian2d = "0.4"
 avian3d = "0.4"
-bevy_enhanced_input = "0.20"
+# bevy_enhanced_input = "0.20"
 
 [profile.dev]
 opt-level = 0
