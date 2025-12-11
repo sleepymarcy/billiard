@@ -1,7 +1,7 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
 
-use crate::config;
+use crate::{MouseDelta, config};
 
 #[derive(Component)]
 pub struct Cue;
@@ -49,4 +49,21 @@ pub fn spawn(
         LinearDamping(0.55),
         AngularDamping(0.5),
     ));
+}
+
+
+pub fn apply_velocity(
+    mut drag_accumulator: ResMut<MouseDelta>,
+    mouse_buttons: Res<ButtonInput<MouseButton>>,
+    ball_velocity: Single<&mut LinearVelocity, With<Cue>>,
+) {
+    if mouse_buttons.just_released(MouseButton::Left) {
+        let scaled_delta = drag_accumulator.delta / 100.0;
+        let velocity = -scaled_delta.extend(0.0).xzy();
+
+        *ball_velocity.into_inner() = LinearVelocity(velocity);
+
+        println!("{:?}", drag_accumulator.delta);
+        drag_accumulator.delta = Vec2::ZERO;
+    }
 }

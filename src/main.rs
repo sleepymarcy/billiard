@@ -21,7 +21,7 @@ fn main() {
         )
         .add_systems(
             Update,
-            (accumulate_drag_input, apply_drag_to_cue_ball).chain(), // ensures that systems run in order //
+            (accumulate_drag_input, ball::apply_velocity).chain(), // ensures that systems run in order //
         )
         .insert_resource(SolverConfig {
             restitution_threshold: 0.01,
@@ -32,7 +32,7 @@ fn main() {
 }
 
 #[derive(Resource)]
-struct MouseDelta {
+pub struct MouseDelta {
     delta: Vec2,
 }
 
@@ -43,21 +43,5 @@ fn accumulate_drag_input(
 ) {
     if mouse_buttons.pressed(MouseButton::Left) {
         drag_accumulator.delta += acumulated_mouse_motion.delta;
-    }
-}
-
-fn apply_drag_to_cue_ball(
-    mut drag_accumulator: ResMut<MouseDelta>,
-    mouse_buttons: Res<ButtonInput<MouseButton>>,
-    ball_velocity: Single<&mut LinearVelocity, With<ball::Cue>>,
-) {
-    if mouse_buttons.just_released(MouseButton::Left) {
-        let scaled_delta = drag_accumulator.delta / 100.0;
-        let velocity = -scaled_delta.extend(0.0).xzy();
-
-        *ball_velocity.into_inner() = LinearVelocity(velocity);
-
-        println!("{:?}", drag_accumulator.delta);
-        drag_accumulator.delta = Vec2::ZERO;
     }
 }
