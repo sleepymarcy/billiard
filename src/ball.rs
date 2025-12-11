@@ -12,12 +12,6 @@ pub fn spawn(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    // let mesh_handle = meshes.add(Sphere {
-    //     radius: config::BALL_RADIUS,
-    // });
-
-    // let material_handle = materials.add(Color::WHITE);
-
     let arrow_image: Handle<Image> = asset_server.load("arrow.png");
     let arrow_material = StandardMaterial {
         base_color_texture: Some(arrow_image),
@@ -42,11 +36,6 @@ pub fn spawn(
         MeshMaterial3d(arrow_handle),
         Cue,
         RigidBody::Dynamic,
-        LinearVelocity(Vec3 {
-            x: 1.0,
-            y: 0.0,
-            z: 1.0,
-        }),
         Collider::sphere(config::BALL_RADIUS),
         Restitution {
             coefficient: 0.9,

@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::ball::Cue;
 
 pub fn spawn(mut commands: Commands) {
-    let transform = Transform::from_xyz(0.0, 1.0, 0.0).looking_at(Vec3::ZERO, -Vec3::Z);
+    let transform = Transform::from_xyz(0.0, 3.0, 0.0).looking_at(Vec3::ZERO, -Vec3::Z);
     commands.spawn((Camera3d::default(), transform));
 }
 

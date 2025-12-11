@@ -1,5 +1,5 @@
 use avian3d::{dynamics::solver::SolverConfig, prelude::*};
-use bevy::prelude::*;
+use bevy::{input::mouse::AccumulatedMouseMotion, prelude::*};
 
 mod ball;
 mod camera;
@@ -19,61 +19,45 @@ fn main() {
                 table::spawn,
             ),
         )
-        .add_systems(Update, (camera::follow_cue_ball, get_mouse_delta))
+        .add_systems(
+            Update,
+            (accumulate_drag_input, apply_drag_to_cue_ball).chain(), // ensures that systems run in order //
+        )
         .insert_resource(SolverConfig {
             restitution_threshold: 0.01,
             ..default()
         })
-        .insert_resource(MouseController {
-            lmb_past: LmbPast { pressed: false },
-            mouse_vector: MouseVector {
-                beginning: Vec2::ZERO,
-                end: Vec2::ZERO,
-            },
-        })
+        .insert_resource(MouseDelta { delta: Vec2::ZERO })
         .run();
 }
 
-#[derive(Component)]
-struct LmbPast {
-    pub pressed: bool,
-}
-
-#[derive(Component)]
-struct MouseVector {
-    pub beginning: Vec2,
-    pub end: Vec2,
-}
-
 #[derive(Resource)]
-struct MouseController {
-    lmb_past: LmbPast,
-    mouse_vector: MouseVector,
+struct MouseDelta {
+    delta: Vec2,
 }
 
-
-// TODO: improve get_mouse_delta
-// 1) instead of Window and cursor position use AccumulatedMouseMotion to get mouse delta
-// 2) use just_pressed instead of pressed - eliminates the need to store past LMB state
-
-fn get_mouse_delta(
-    mut mouse_controller: ResMut<MouseController>,
-    window: Single<&Window>,
+fn accumulate_drag_input(
+    acumulated_mouse_motion: Res<AccumulatedMouseMotion>,
+    mut drag_accumulator: ResMut<MouseDelta>,
     mouse_buttons: Res<ButtonInput<MouseButton>>,
 ) {
-    let lmb_pressed = mouse_buttons.pressed(MouseButton::Left);
-    mouse_buttons.just_pressed(MouseButton::Left);
-    let mouse_position = window.cursor_position();
-
-    if lmb_pressed && !mouse_controller.lmb_past.pressed && mouse_position.is_some() {
-        mouse_controller.mouse_vector.beginning = mouse_position.unwrap();
+    if mouse_buttons.pressed(MouseButton::Left) {
+        drag_accumulator.delta += acumulated_mouse_motion.delta;
     }
+}
 
-    if !lmb_pressed && mouse_controller.lmb_past.pressed && mouse_position.is_some() {
-        mouse_controller.mouse_vector.end = mouse_position.unwrap();
-        let mouse_delta = mouse_controller.mouse_vector.end - mouse_controller.mouse_vector.beginning;
-        println!("{mouse_delta:?}");
+fn apply_drag_to_cue_ball(
+    mut drag_accumulator: ResMut<MouseDelta>,
+    mouse_buttons: Res<ButtonInput<MouseButton>>,
+    ball_velocity: Single<&mut LinearVelocity, With<ball::Cue>>,
+) {
+    if mouse_buttons.just_released(MouseButton::Left) {
+        let scaled_delta = drag_accumulator.delta / 100.0;
+        let velocity = -scaled_delta.extend(0.0).xzy();
+
+        *ball_velocity.into_inner() = LinearVelocity(velocity);
+
+        println!("{:?}", drag_accumulator.delta);
+        drag_accumulator.delta = Vec2::ZERO;
     }
-
-    mouse_controller.lmb_past.pressed = lmb_pressed;
 }
